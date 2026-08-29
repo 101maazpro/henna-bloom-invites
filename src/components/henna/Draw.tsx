@@ -36,7 +36,12 @@ function popVariants(delay: number, reduced: boolean): Variants {
   };
 }
 
-interface StageProps extends SVGProps<SVGSVGElement> {
+type Clean<T> = Omit<
+  T,
+  "ref" | "style" | "onAnimationStart" | "onAnimationEnd" | "onDrag" | "onDragStart" | "onDragEnd"
+>;
+
+interface StageProps extends Clean<SVGProps<SVGSVGElement>> {
   children: ReactNode;
   /** viewport amount before the drawing starts */
   amount?: number;
@@ -68,7 +73,7 @@ export function HennaStage({ children, amount = 0.35, immediate = false, ...rest
   );
 }
 
-interface DrawPathProps extends Omit<SVGProps<SVGPathElement>, "ref"> {
+interface DrawPathProps extends Clean<SVGProps<SVGPathElement>> {
   d: string;
   delay?: number;
   duration?: number;
@@ -88,7 +93,7 @@ export function DrawPath({ d, delay = 0, duration = 1.8, ...rest }: DrawPathProp
   );
 }
 
-interface DrawCircleProps extends Omit<SVGProps<SVGCircleElement>, "ref"> {
+interface DrawCircleProps extends Clean<SVGProps<SVGCircleElement>> {
   cx: number;
   cy: number;
   r: number;
@@ -110,7 +115,9 @@ export function DrawCircle({
       variants={
         mode === "dot" ? popVariants(delay, reduced) : drawVariants(delay, duration, reduced)
       }
-      style={mode === "dot" ? { transformOrigin: `${rest.cx}px ${rest.cy}px` } : undefined}
+      {...(mode === "dot"
+        ? { style: { transformOrigin: `${rest.cx}px ${rest.cy}px` } }
+        : {})}
       {...(rest as object)}
     />
   );
@@ -121,7 +128,7 @@ export function DrawGroup({
   delay = 0,
   children,
   ...rest
-}: { delay?: number; children: ReactNode } & Omit<SVGProps<SVGGElement>, "ref">) {
+}: { delay?: number; children: ReactNode } & Clean<SVGProps<SVGGElement>>) {
   const reduced = useContext(ReducedCtx);
   return (
     <motion.g variants={popVariants(delay, reduced)} {...(rest as object)}>
