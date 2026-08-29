@@ -38,7 +38,7 @@ function popVariants(delay: number, reduced: boolean): Variants {
 
 type Clean<T> = Omit<
   T,
-  "ref" | "style" | "onAnimationStart" | "onAnimationEnd" | "onDrag" | "onDragStart" | "onDragEnd"
+  "ref" | "style" | "values" | "onAnimationStart" | "onAnimationEnd" | "onDrag" | "onDragStart" | "onDragEnd"
 >;
 
 interface StageProps extends Clean<SVGProps<SVGSVGElement>> {
