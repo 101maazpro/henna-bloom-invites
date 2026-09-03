@@ -123,24 +123,39 @@ export function Invitation({ data = wedding }: { data?: WeddingData }) {
   const [opened, setOpened] = useState(false);
   const [playing, setPlaying] = useState(false);
   const ambience = useMemo(() => createAmbience(), []);
+  const audio = useMemo(() => (d.music.url ? new Audio(d.music.url) : null), [d.music.url]);
 
-  useEffect(() => () => ambience.dispose(), [ambience]);
+  useEffect(() => () => {
+    ambience.dispose();
+    if (audio) {
+      audio.pause();
+      audio.src = "";
+    }
+  }, [ambience, audio]);
+
+  const startMusic = async () => {
+    if (audio) return audio.play();
+    return ambience.start();
+  };
+
+  const stopMusic = () => {
+    if (audio) audio.pause();
+    else ambience.stop();
+  };
 
   const onOpen = () => {
     setOpened(true);
     if (d.music.enabled) {
-      void ambience.start();
-      setPlaying(true);
+      void startMusic().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
   };
 
   const toggleMusic = () => {
     if (playing) {
-      ambience.stop();
+      stopMusic();
       setPlaying(false);
     } else {
-      void ambience.start();
-      setPlaying(true);
+      void startMusic().then(() => setPlaying(true)).catch(() => setPlaying(false));
     }
   };
 
@@ -156,6 +171,7 @@ export function Invitation({ data = wedding }: { data?: WeddingData }) {
 
       <Hero />
       {(d.message.kicker || d.message.body || d.message.closing) && <MessageSection />}
+      {d.profiles && <CoupleSection />}
       <CountdownSection />
       {d.events.length > 0 && <EventsSection />}
       <VenueSection />
@@ -304,6 +320,34 @@ function MessageSection() {
   );
 }
 
+function CoupleSection() {
+  const d = useWedding();
+  const profiles = d.profiles;
+  if (!profiles) return null;
+  const people = [
+    { name: d.couple.groom, profile: profiles.groom },
+    { name: d.couple.bride, profile: profiles.bride },
+  ];
+
+  return (
+    <Section className="relative py-20">
+      <div className="text-center"><Eyebrow>With their families</Eyebrow></div>
+      <div className="mt-10 grid gap-10 sm:grid-cols-2">
+        {people.map(({ name, profile }) => (
+          <Reveal key={name} className="text-center">
+            {profile.photoUrl && <img src={profile.photoUrl} alt={name} loading="lazy" className="mx-auto aspect-[4/5] w-44 border border-border object-cover" />}
+            <h2 className="display-name mt-5 text-3xl">{name}</h2>
+            {profile.qualification && <p className="mt-2 font-display text-sm text-muted-foreground">{profile.qualification}</p>}
+            {profile.occupation && <p className="font-display text-sm text-muted-foreground">{profile.occupation}</p>}
+            {profile.parents && <p className="mt-3 font-display text-sm text-foreground/80">{profile.parents}</p>}
+          </Reveal>
+        ))}
+      </div>
+      {profiles.relatives && <Reveal><p className="mx-auto mt-10 max-w-sm text-center font-display text-sm text-muted-foreground">{profiles.relatives}</p></Reveal>}
+    </Section>
+  );
+}
+
 /* ------------------------- 3. COUNTDOWN --------------------------- */
 
 function CountdownSection() {
@@ -412,7 +456,7 @@ function VenueSection() {
               {d.venue.city}
             </p>
           </Reveal>
-          <Reveal delay={0.35}>
+          {d.venue.mapsUrl && <Reveal delay={0.35}>
             <a
               href={d.venue.mapsUrl}
               target="_blank"
@@ -421,7 +465,8 @@ function VenueSection() {
             >
               {t.directions}
             </a>
-          </Reveal>
+          </Reveal>}
+          {d.venue.imageUrl && <img src={d.venue.imageUrl} alt={d.venue.name || "Venue"} loading="lazy" className="mx-auto mt-8 max-h-44 w-full object-cover" />}
         </div>
       </div>
     </Section>

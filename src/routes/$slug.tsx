@@ -1,43 +1,57 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Invitation } from "./index";
-import { getInvitationBySlug } from "@/lib/invitation-server";
+import { fetchPublicInvitation, getSlugFromPathname, mapInvitation, mapShopFallback, type PublicInvitationResponse } from "@/lib/invitation-content";
 
 export const Route = createFileRoute("/$slug")({
-  loader: ({ params }) => getInvitationBySlug({ data: params.slug }),
   component: SlugInvitation,
 });
 
 function SlugInvitation() {
-  const result = Route.useLoaderData();
-  if (result.kind === "active") return <Invitation data={result.data} />;
+  const [result, setResult] = useState<PublicInvitationResponse | null>(null);
+  const [requestError, setRequestError] = useState(false);
+  const routeSlug = Route.useParams({ select: (params) => params.slug });
 
-  if (result.kind === "expired") {
+  useEffect(() => {
+    const slug = getSlugFromPathname(window.location.pathname);
+    if (!slug || slug !== routeSlug) { setResult({ state: "not_found" }); return; }
+    let active = true;
+    setResult(null); setRequestError(false);
+    void fetchPublicInvitation(slug).then((data) => active && setResult(data)).catch(() => active && setRequestError(true));
+    return () => { active = false; };
+  }, [routeSlug]);
+
+  if (requestError) return <StatusPage title="Unable to load invitation" message="Please try again in a moment." />;
+  if (!result) return <StatusPage title="Loading invitation" message="Preparing your invitation…" />;
+  if (result.state === "live") return <Invitation data={mapInvitation(result)} />;
+
+  if (result.state === "fallback") {
+    const shop = mapShopFallback(result.shop);
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
         <div className="max-w-sm">
-          <p className="eyebrow">{result.shop.name}</p>
+          <p className="eyebrow">{shop.name}</p>
           <h1 className="display-name mt-4 text-4xl">Invitation unavailable</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            This invitation has ended. Current date: {result.shop.date}.
-          </p>
-          <p className="mt-5 font-display text-base text-foreground/80">{result.shop.location}</p>
-          {result.shop.locationUrl && (
-            <a href={result.shop.locationUrl} target="_blank" rel="noreferrer noopener" className="mt-6 inline-block border border-accent px-5 py-3 text-xs uppercase tracking-widest">
-              Visit location
-            </a>
-          )}
-          {result.shop.contact && <p className="mt-5 text-xs text-muted-foreground">{result.shop.contact}</p>}
+          <p className="mt-3 text-sm text-muted-foreground">This invitation is no longer available.</p>
+          {(shop.address || shop.city) && <p className="mt-5 font-display text-base text-foreground/80">{[shop.address, shop.city].filter(Boolean).join(", ")}</p>}
+          {shop.phone && <p className="mt-5 text-xs text-muted-foreground">{shop.phone}</p>}
+          {shop.whatsapp && <a href={`https://wa.me/${shop.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer noopener" className="mt-6 inline-block border border-accent px-5 py-3 text-xs uppercase tracking-widest">Contact on WhatsApp</a>}
+          {shop.businessContact && <p className="mt-5 text-xs text-muted-foreground">{shop.businessContact}</p>}
         </div>
       </main>
     );
   }
 
+  return <StatusPage title="Invitation not found" message="This invitation link is invalid." home />;
+}
+
+function StatusPage({ title, message, home = false }: { title: string; message: string; home?: boolean }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
       <div>
-        <h1 className="display-name text-4xl">Invitation not found</h1>
-        <p className="mt-3 text-sm text-muted-foreground">This invitation link is invalid.</p>
-        <Link to="/" className="mt-6 inline-block border border-accent px-5 py-3 text-xs uppercase tracking-widest">Go home</Link>
+        <h1 className="display-name text-4xl">{title}</h1>
+        <p className="mt-3 text-sm text-muted-foreground">{message}</p>
+        {home && <Link to="/" className="mt-6 inline-block border border-accent px-5 py-3 text-xs uppercase tracking-widest">Go home</Link>}
       </div>
     </main>
   );

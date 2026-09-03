@@ -43,6 +43,7 @@ export interface SocialLink {
 
 export interface WeddingData {
   couple: { groom: string; bride: string; joiner: string };
+  profiles?: { groom: PersonProfile; bride: PersonProfile; relatives: string };
   invocation: Invocation;
   headlineDate: string;
   /** ISO datetime used by the countdown */
@@ -54,14 +55,22 @@ export interface WeddingData {
     address: string;
     city: string;
     mapsUrl: string;
+    imageUrl?: string;
   };
   gallery: GalleryImage[];
   social: SocialLink[];
   rsvpDeadline: string;
   finale: { title: string; note: string; qr?: boolean };
-  music: { enabled: boolean; label: string };
+  music: { enabled: boolean; label: string; url?: string };
   publicUrl?: string;
   qrCenterText?: string;
+}
+
+export interface PersonProfile {
+  photoUrl: string;
+  qualification: string;
+  occupation: string;
+  parents: string;
 }
 
 export const wedding: WeddingData = {
