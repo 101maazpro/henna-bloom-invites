@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
-import { wedding } from "@/data/wedding";
+import { wedding, type WeddingData } from "@/data/wedding";
 import { createAmbience } from "@/lib/ambient-music";
 import { Countdown } from "@/components/invitation/Countdown";
 import { OpenGate } from "@/components/invitation/OpenGate";
 import { MusicToggle } from "@/components/invitation/MusicToggle";
 import { Rsvp } from "@/components/invitation/Rsvp";
 import { SocialIcons } from "@/components/invitation/SocialIcons";
+import { LanguageSwitcher } from "@/components/invitation/LanguageSwitcher";
+import { LanguageProvider, useLanguage, type Language } from "@/lib/language";
 import {
   BorderStrip,
   FloralSpray,
@@ -24,23 +26,23 @@ import { HennaStage } from "@/components/henna/Draw";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Ahmed & Ayesha — 14 December 2026 | Mehendi Wedding Invitation" },
+      { title: "Henna Bloom Invites" },
       {
         name: "description",
         content:
-          "A hand-drawn mehendi wedding invitation for Ahmed & Ayesha in Hyderabad, 14 December 2026. Events, venue, countdown and RSVP.",
+          "A hand-drawn mehendi wedding invitation.",
       },
-      { property: "og:title", content: "Ahmed & Ayesha — Wedding Invitation" },
+      { property: "og:title", content: "Henna Bloom Invites" },
       {
         property: "og:description",
         content:
-          "Together with their families, Ahmed & Ayesha invite you to celebrate their special day in Hyderabad.",
+          "Open a private wedding invitation.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Invitation,
+  component: RootLanding,
 });
 
 /* ------------------------------------------------------------------ */
@@ -49,6 +51,21 @@ const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0 },
 };
+
+const WeddingContext = createContext<WeddingData>(wedding);
+const useWedding = () => useContext(WeddingContext);
+
+function RootLanding() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-background px-6 text-center">
+      <div>
+        <p className="eyebrow">Henna Bloom Invites</p>
+        <h1 className="display-name mt-4 text-4xl">Your invitation awaits</h1>
+        <p className="mt-3 text-sm text-muted-foreground">Open the invitation using its private link.</p>
+      </div>
+    </main>
+  );
+}
 
 function Reveal({
   children,
@@ -99,9 +116,10 @@ function Eyebrow({ children }: { children: ReactNode }) {
 
 /* ------------------------------------------------------------------ */
 
-function Invitation() {
-  const d = wedding;
+export function Invitation({ data = wedding }: { data?: WeddingData }) {
+  const d = data;
   const reduced = useReducedMotion() ?? false;
+  const [language, setLanguage] = useState<Language>("en");
   const [opened, setOpened] = useState(false);
   const [playing, setPlaying] = useState(false);
   const ambience = useMemo(() => createAmbience(), []);
@@ -127,6 +145,9 @@ function Invitation() {
   };
 
   return (
+    <LanguageProvider language={language} setLanguage={setLanguage}>
+    <WeddingContext.Provider value={d}>
+      <LanguageSwitcher />
     <main className="paper-grain paper-vignette relative min-h-screen overflow-x-hidden bg-background">
       <OpenGate groom={d.couple.groom} bride={d.couple.bride} onOpen={onOpen} />
       {d.music.enabled && opened && (
@@ -134,21 +155,24 @@ function Invitation() {
       )}
 
       <Hero />
-      <MessageSection />
+      {(d.message.kicker || d.message.body || d.message.closing) && <MessageSection />}
       <CountdownSection />
-      <EventsSection />
+      {d.events.length > 0 && <EventsSection />}
       <VenueSection />
-      <GallerySection reduced={reduced} />
+      {d.gallery.length > 0 && <GallerySection reduced={reduced} />}
       <RsvpSection />
       <Finale />
     </main>
+    </WeddingContext.Provider>
+    </LanguageProvider>
   );
 }
 
 /* ---------------------------- 1. HERO ----------------------------- */
 
 function Hero() {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   const inv = d.invocation;
   const fontClass =
     inv.font === "arabic"
@@ -195,7 +219,7 @@ function Hero() {
             animate={{ opacity: 1 }}
             transition={{ delay: 4.2, duration: 1.2 }}
           >
-            The wedding of
+            {t.weddingOf}
           </motion.p>
 
           <motion.h1
@@ -233,7 +257,7 @@ function Hero() {
           transition={{ delay: 6.6, duration: 1.4 }}
           className="absolute -bottom-20 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
         >
-          <span className="eyebrow text-[0.55rem]">Scroll</span>
+          <span className="eyebrow text-[0.55rem]">{t.scroll}</span>
           <motion.span
             className="block h-10 w-px bg-border"
             animate={{ scaleY: [0.3, 1, 0.3], originY: 0 }}
@@ -248,7 +272,7 @@ function Hero() {
 /* -------------------------- 2. MESSAGE ---------------------------- */
 
 function MessageSection() {
-  const d = wedding;
+  const d = useWedding();
   return (
     <Section className="relative py-24">
       <FloralSpray className="pointer-events-none absolute -left-6 top-6 h-64 w-32 ink-line opacity-70 sm:-left-16" />
@@ -283,7 +307,8 @@ function MessageSection() {
 /* ------------------------- 3. COUNTDOWN --------------------------- */
 
 function CountdownSection() {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   return (
     <Section className="relative py-20">
       <HennaStage className="pointer-events-none absolute inset-x-0 -top-2 h-16 w-full ink-line" viewBox="0 0 320 60">
@@ -299,9 +324,9 @@ function CountdownSection() {
         </g>
       </HennaStage>
       <div className="text-center">
-        <Eyebrow>Counting the days</Eyebrow>
+        <Eyebrow>{t.counting}</Eyebrow>
         <Reveal delay={0.15}>
-          <p className="display-name mt-4 text-2xl">until the Nikah</p>
+          <p className="display-name mt-4 text-2xl">{t.untilNikah}</p>
         </Reveal>
       </div>
       <div className="mt-10">
@@ -315,13 +340,14 @@ function CountdownSection() {
 /* --------------------------- 4. EVENTS ---------------------------- */
 
 function EventsSection() {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   return (
     <Section className="relative py-20">
       <div className="text-center">
-        <Eyebrow>Celebrations</Eyebrow>
+        <Eyebrow>{t.celebrations}</Eyebrow>
         <Reveal delay={0.1}>
-          <h2 className="display-name mt-4 text-4xl">The Events</h2>
+          <h2 className="display-name mt-4 text-4xl">{t.events}</h2>
         </Reveal>
       </div>
 
@@ -355,7 +381,7 @@ function EventsSection() {
                   rel="noreferrer noopener"
                   className="mt-5 inline-block border-b border-accent pb-1 font-sans text-[0.6rem] tracking-[0.36em] text-primary uppercase transition-opacity hover:opacity-70"
                 >
-                  View location
+                  {t.location}
                 </a>
               )}
             </Reveal>
@@ -369,13 +395,14 @@ function EventsSection() {
 /* ---------------------------- 5. VENUE ---------------------------- */
 
 function VenueSection() {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   return (
     <Section className="relative py-24">
       <div className="relative mx-auto flex min-h-[420px] max-w-[330px] items-center justify-center">
         <HennaArch className="pointer-events-none absolute inset-0 h-full w-full ink-line" />
         <div className="relative px-10 pt-14 text-center">
-          <Eyebrow>The Venue</Eyebrow>
+          <Eyebrow>{t.venue}</Eyebrow>
           <Reveal delay={0.15}>
             <h2 className="display-name mt-4 text-[1.9rem] leading-tight">{d.venue.name}</h2>
           </Reveal>
@@ -392,7 +419,7 @@ function VenueSection() {
               rel="noreferrer noopener"
               className="mt-7 inline-block border border-accent px-6 py-3 font-sans text-[0.6rem] tracking-[0.36em] text-primary uppercase transition-colors hover:bg-secondary"
             >
-              Get directions
+              {t.directions}
             </a>
           </Reveal>
         </div>
@@ -408,7 +435,7 @@ function GalleryImage({
   index,
   reduced,
 }: {
-  image: (typeof wedding)["gallery"][number];
+  image: WeddingData["gallery"][number];
   index: number;
   reduced: boolean;
 }) {
@@ -460,13 +487,14 @@ function GalleryImage({
 }
 
 function GallerySection({ reduced }: { reduced: boolean }) {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   return (
     <Section className="relative py-20">
       <div className="text-center">
-        <Eyebrow>Moments</Eyebrow>
+        <Eyebrow>{t.moments}</Eyebrow>
         <Reveal delay={0.1}>
-          <h2 className="display-name mt-4 text-4xl">Us, so far</h2>
+          <h2 className="display-name mt-4 text-4xl">{t.gallery}</h2>
         </Reveal>
       </div>
       <div className="mt-16 space-y-20">
@@ -482,16 +510,17 @@ function GallerySection({ reduced }: { reduced: boolean }) {
 /* ---------------------------- 7. RSVP ----------------------------- */
 
 function RsvpSection() {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   return (
     <Section className="relative py-20">
       <div className="relative">
         <OrnamentFrame className="pointer-events-none absolute -inset-x-4 -inset-y-8 h-[calc(100%+4rem)] w-[calc(100%+2rem)] ink-line" />
         <div className="relative px-4 py-10">
           <div className="text-center">
-            <Eyebrow>Kindly respond</Eyebrow>
+            <Eyebrow>{t.respond}</Eyebrow>
             <Reveal delay={0.1}>
-              <h2 className="display-name mt-4 text-4xl">RSVP</h2>
+              <h2 className="display-name mt-4 text-4xl">{t.rsvp}</h2>
             </Reveal>
           </div>
           <div className="mt-10">
@@ -506,7 +535,8 @@ function RsvpSection() {
 /* --------------------------- 8. FINALE ---------------------------- */
 
 function Finale() {
-  const d = wedding;
+  const d = useWedding();
+  const { t } = useLanguage();
   return (
     <section className="relative overflow-hidden px-6 pt-28 pb-20">
       <div className="relative mx-auto flex aspect-square w-full max-w-[520px] items-center justify-center">
@@ -532,22 +562,13 @@ function Finale() {
         {d.finale.qr && (
           <Reveal delay={0.15}>
             <div className="mx-auto mt-9 flex h-24 w-24 items-center justify-center border border-border p-2">
-              <div className="grid h-full w-full grid-cols-6 gap-[2px] opacity-70">
-                {Array.from({ length: 36 }, (_, i) => (
-                  <span
-                    key={i}
-                    className={
-                      [0, 1, 2, 6, 8, 12, 13, 14, 3, 5, 9, 17, 21, 22, 28, 30, 33, 34, 35].includes(
-                        i,
-                      )
-                        ? "bg-primary"
-                        : ""
-                    }
-                  />
-                ))}
-              </div>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(d.publicUrl ?? (typeof window !== "undefined" ? window.location.href : "http://localhost:8080/"))}`}
+                alt={d.qrCenterText ?? "Scan invitation QR code"}
+                className="h-full w-full"
+              />
             </div>
-            <p className="eyebrow mt-3 text-[0.5rem]">Scan to RSVP</p>
+            <p className="eyebrow mt-3 text-[0.5rem]">{t.scan}</p>
           </Reveal>
         )}
 

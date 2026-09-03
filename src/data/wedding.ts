@@ -60,6 +60,8 @@ export interface WeddingData {
   rsvpDeadline: string;
   finale: { title: string; note: string; qr?: boolean };
   music: { enabled: boolean; label: string };
+  publicUrl?: string;
+  qrCenterText?: string;
 }
 
 export const wedding: WeddingData = {

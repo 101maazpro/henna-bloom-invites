@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { HennaStage, DrawCircle, DrawPath } from "@/components/henna/Draw";
 import { Flower } from "@/components/henna/Motifs";
 import { radial, scallop, petal } from "@/lib/henna";
+import { useLanguage } from "@/lib/language";
 
 export function OpenGate({
   groom,
@@ -14,6 +15,7 @@ export function OpenGate({
   onOpen: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     document.body.style.overflow = open ? "" : "hidden";
@@ -49,7 +51,7 @@ export function OpenGate({
             animate={{ opacity: 1 }}
             transition={{ delay: 2.6, duration: 1 }}
           >
-            The wedding of
+            {t.weddingOf}
           </motion.p>
           <motion.h2
             className="display-name mt-3 text-center text-3xl sm:text-4xl"
@@ -71,7 +73,7 @@ export function OpenGate({
             }}
             className="mt-10 border border-accent px-8 py-3.5 font-sans text-[0.65rem] tracking-[0.45em] text-foreground uppercase transition-colors hover:bg-secondary"
           >
-            Open Invitation
+            {t.open}
           </motion.button>
         </motion.div>
       )}

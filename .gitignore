@@ -30,3 +30,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.env
+
+
+src/assets/ZAR_V2_Design_Application_Specification.docx
+src/components/invitation/LanguageSwitcher.tsx
