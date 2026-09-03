@@ -1,4 +1,4 @@
-import type { GalleryImage, SocialLink, WeddingData, WeddingEvent } from "@/data/wedding";
+import type { GalleryImage, InvitationContact, WeddingData, WeddingEvent } from "@/data/wedding";
 
 type RecordValue = Record<string, unknown>;
 
@@ -65,13 +65,12 @@ function galleryFrom(value: unknown): GalleryImage[] {
   });
 }
 
-function socialFrom(value: unknown): SocialLink[] {
-  return list(value).flatMap((item) => {
-    const link = asRecord(item);
-    const href = string(link.href) || string(link.url);
-    const kind = string(link.kind) || string(link.platform);
-    if (!href || !["whatsapp", "phone", "instagram", "facebook", "youtube"].includes(kind)) return [];
-    return [{ kind: kind as SocialLink["kind"], label: string(link.label, kind), href }];
+function contactsFrom(value: unknown): InvitationContact[] {
+  return list(value).slice(0, 2).flatMap((item) => {
+    const contact = asRecord(item);
+    const phone = string(contact.phone);
+    if (!phone) return [];
+    return [{ name: string(contact.name), phone, whatsappUrl: string(contact.whatsapp_url) }];
   });
 }
 
@@ -138,7 +137,7 @@ export function mapInvitation(response: PublicInvitationResponse): WeddingData {
     events,
     venue: { name: string(content.venue_name), address: string(content.venue_address), city: string(content.city), mapsUrl: string(content.maps_url), imageUrl: string(content.venue_image_url) },
     gallery: [...photos, ...galleryFrom(content.gallery)],
-    social: socialFrom(content.social_links),
+    contacts: contactsFrom(content.contacts),
     rsvpDeadline: string(content.end_time),
     finale: { title: "Thank you for celebrating with us", note: "Your presence is the finest ornament of all", qr: Boolean(string(invitation.public_url)) },
     music: { enabled: content.music_enabled === true, label: "Wedding music", url: string(content.music_url) || undefined },

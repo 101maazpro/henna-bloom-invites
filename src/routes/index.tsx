@@ -8,7 +8,6 @@ import { Countdown } from "@/components/invitation/Countdown";
 import { OpenGate } from "@/components/invitation/OpenGate";
 import { MusicToggle } from "@/components/invitation/MusicToggle";
 import { Rsvp } from "@/components/invitation/Rsvp";
-import { SocialIcons } from "@/components/invitation/SocialIcons";
 import { LanguageSwitcher } from "@/components/invitation/LanguageSwitcher";
 import { LanguageProvider, useLanguage, type Language } from "@/lib/language";
 import {
@@ -177,6 +176,7 @@ export function Invitation({ data = wedding }: { data?: WeddingData }) {
       <VenueSection />
       {d.gallery.length > 0 && <GallerySection reduced={reduced} />}
       <RsvpSection />
+      {d.contacts.length > 0 && <ContactSection />}
       <Finale />
     </main>
     </WeddingContext.Provider>
@@ -577,6 +577,33 @@ function RsvpSection() {
   );
 }
 
+function ContactSection() {
+  const d = useWedding();
+  return (
+    <Section className="relative py-16">
+      <div className="text-center">
+        <Eyebrow>For any queries</Eyebrow>
+        <Reveal delay={0.1}><h2 className="display-name mt-4 text-4xl">Contact</h2></Reveal>
+      </div>
+      <div className="mt-10 grid gap-6 sm:grid-cols-2">
+        {d.contacts.map((contact, index) => {
+          const phoneDigits = contact.phone.replace(/\D/g, "");
+          const whatsappUrl = contact.whatsappUrl || (phoneDigits ? `https://wa.me/${phoneDigits}` : "");
+          return (
+            <Reveal key={`${contact.phone}-${index}`} className="border border-border px-5 py-6 text-center" delay={0.1 * index}>
+              {contact.name && <p className="display-name text-2xl">{contact.name}</p>}
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <a href={`tel:${contact.phone}`} className="border border-accent px-5 py-3 font-sans text-[0.6rem] tracking-[0.28em] text-primary uppercase transition-colors hover:bg-secondary">Call</a>
+                {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer noopener" className="border border-accent px-5 py-3 font-sans text-[0.6rem] tracking-[0.28em] text-primary uppercase transition-colors hover:bg-secondary">WhatsApp</a>}
+              </div>
+            </Reveal>
+          );
+        })}
+      </div>
+    </Section>
+  );
+}
+
 /* --------------------------- 8. FINALE ---------------------------- */
 
 function Finale() {
@@ -602,12 +629,6 @@ function Finale() {
       <div className="mx-auto mt-10 max-w-[430px] text-center">
         <Reveal>
           <p className="font-display text-base text-muted-foreground italic">{d.finale.note}</p>
-        </Reveal>
-
-        <Reveal delay={0.2}>
-          <div className="mt-10">
-            <SocialIcons links={d.social} />
-          </div>
         </Reveal>
 
         <Reveal delay={0.3}>

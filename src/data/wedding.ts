@@ -35,10 +35,10 @@ export interface GalleryImage {
   span: "tall" | "wide";
 }
 
-export interface SocialLink {
-  kind: "whatsapp" | "phone" | "instagram" | "facebook" | "youtube";
-  label: string;
-  href: string;
+export interface InvitationContact {
+  name: string;
+  phone: string;
+  whatsappUrl: string;
 }
 
 export interface WeddingData {
@@ -58,7 +58,7 @@ export interface WeddingData {
     imageUrl?: string;
   };
   gallery: GalleryImage[];
-  social: SocialLink[];
+  contacts: InvitationContact[];
   rsvpDeadline: string;
   finale: { title: string; note: string; qr?: boolean };
   music: { enabled: boolean; label: string; url?: string };
@@ -144,12 +144,7 @@ export const wedding: WeddingData = {
     { src: couple3, alt: "The couple laughing under marigolds", width: 800, height: 1104, span: "tall" },
     { src: couple4, alt: "Diya and roses on the wedding table", width: 928, height: 720, span: "wide" },
   ],
-  social: [
-    { kind: "whatsapp", label: "WhatsApp", href: "https://wa.me/919000000000" },
-    { kind: "phone", label: "Call", href: "tel:+919000000000" },
-    { kind: "instagram", label: "Instagram", href: "https://instagram.com" },
-    { kind: "facebook", label: "Facebook", href: "https://facebook.com" },
-  ],
+  contacts: [],
   rsvpDeadline: "30 November 2026",
   finale: {
     title: "Thank you for celebrating with us",
