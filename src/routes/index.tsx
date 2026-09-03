@@ -563,7 +563,7 @@ function Finale() {
           <Reveal delay={0.15}>
             <div className="mx-auto mt-9 flex h-24 w-24 items-center justify-center border border-border p-2">
               <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(d.publicUrl ?? (typeof window !== "undefined" ? window.location.href : "http://localhost:8080/"))}`}
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(d.publicUrl ?? (typeof window !== "undefined" ? window.location.href : "https://henna-bloom-invites.vercel.app/"))}`}
                 alt={d.qrCenterText ?? "Scan invitation QR code"}
                 className="h-full w-full"
               />

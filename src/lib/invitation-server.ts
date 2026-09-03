@@ -3,7 +3,7 @@ import type { WeddingData } from "@/data/wedding";
 
 type InvitationRow = Record<string, unknown>;
 
-const LOCAL_PUBLIC_ORIGIN = "http://localhost:8080";
+const LOCAL_PUBLIC_ORIGIN = "https://henna-bloom-invites.vercel.app/";
 
 const text = (row: InvitationRow, key: string, fallback = "") =>
   typeof row[key] === "string" ? (row[key] as string) : fallback;
