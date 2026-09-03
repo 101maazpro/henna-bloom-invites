@@ -604,19 +604,6 @@ function Finale() {
           <p className="font-display text-base text-muted-foreground italic">{d.finale.note}</p>
         </Reveal>
 
-        {d.finale.qr && d.publicUrl && (
-          <Reveal delay={0.15}>
-            <div className="mx-auto mt-9 flex h-24 w-24 items-center justify-center border border-border p-2">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(d.publicUrl)}`}
-                alt={d.qrCenterText ?? "Scan invitation QR code"}
-                className="h-full w-full"
-              />
-            </div>
-            <p className="eyebrow mt-3 text-[0.5rem]">{t.scan}</p>
-          </Reveal>
-        )}
-
         <Reveal delay={0.2}>
           <div className="mt-10">
             <SocialIcons links={d.social} />
