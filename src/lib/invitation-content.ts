@@ -99,8 +99,10 @@ export async function fetchPublicInvitation(slug: string): Promise<PublicInvitat
   if (!response.ok) throw new Error("Unable to load this invitation.");
   const data = await response.json() as unknown;
   const result = asRecord(data);
-  const state = string(result.state);
-  if (state === "live" || state === "fallback" || state === "not_found") return result as PublicInvitationResponse;
+  const payload = asRecord(result.data);
+  const invitation = Object.keys(payload).length > 0 ? payload : result;
+  const state = string(invitation.state);
+  if (state === "live" || state === "fallback" || state === "not_found") return invitation as PublicInvitationResponse;
   throw new Error("The invitation service returned an invalid response.");
 }
 
@@ -114,7 +116,6 @@ export function mapShopFallback(value: unknown): ShopFallback {
 
 export function mapInvitation(response: PublicInvitationResponse): WeddingData {
   const content = asRecord(response.content);
-  const detail = asRecord(response.detail);
   const invitation = asRecord(response.invitation);
   const weddingDate = string(content.wedding_date);
   const events = list(content.events).map((event, index) => eventFrom(event, index, content)).filter((event): event is WeddingEvent => !!event);
@@ -133,7 +134,7 @@ export function mapInvitation(response: PublicInvitationResponse): WeddingData {
     invocation: { kind: invocation ? "custom" : "none", text: invocation, dir: "ltr", font: "serif" },
     headlineDate: formatDate(weddingDate),
     weddingISO: weddingDate || string(content.start_time),
-    message: { kicker: "Together with their families", body: "invite you to celebrate their special day", closing: string(detail.message) || string(detail.closing) },
+    message: { kicker: "Together with their families", body: "invite you to celebrate their special day", closing: "" },
     events,
     venue: { name: string(content.venue_name), address: string(content.venue_address), city: string(content.city), mapsUrl: string(content.maps_url), imageUrl: string(content.venue_image_url) },
     gallery: [...photos, ...galleryFrom(content.gallery)],
