@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  HennaStage,
-  DrawCircle,
-  DrawPath,
-} from "@/components/henna/Draw";
+import { HennaStage, DrawCircle, DrawPath } from "@/components/henna/Draw";
 import { Flower } from "@/components/henna/Motifs";
 import { radial, ringDots, scallop, petal, r2 } from "@/lib/henna";
 import { useLanguage } from "@/lib/language";
@@ -27,19 +23,10 @@ function CoverMedallion() {
   const c = 130;
 
   return (
-    <HennaStage
-      className="h-60 w-60 ink-line sm:h-72 sm:w-72"
-      viewBox="0 0 260 260"
-      immediate
-    >
+    <HennaStage className="h-60 w-60 ink-line sm:h-72 sm:w-72" viewBox="0 0 260 260" immediate>
       <g stroke="currentColor" fill="none">
         {/* Outer halo */}
-        <DrawPath
-          d={scallop(c, c, 122, 28, 9)}
-          delay={0.1}
-          duration={3}
-          strokeWidth={1}
-        />
+        <DrawPath d={scallop(c, c, 122, 28, 9)} delay={0.1} duration={3} strokeWidth={1} />
 
         {/* Outer dot ring */}
         {ringDots(c, c, 110, 28, 0.5).map((d, i) => (
@@ -56,24 +43,12 @@ function CoverMedallion() {
         ))}
 
         {/* Outer circular ring */}
-        <DrawCircle
-          cx={c}
-          cy={c}
-          r={100}
-          delay={0.9}
-          duration={2.6}
-          strokeWidth={0.9}
-        />
+        <DrawCircle cx={c} cy={c} r={100} delay={0.9} duration={2.6} strokeWidth={0.9} />
 
         {/* Petal ring — full circle of overlapping petals */}
         {radial(20, c, c, 78).map((p, i) => (
           <g key={`outer-petal-${i}`} transform={p.transform}>
-            <DrawPath
-              d={petal(30, 13)}
-              delay={1.4 + i * 0.07}
-              duration={0.65}
-              strokeWidth={0.9}
-            />
+            <DrawPath d={petal(30, 13)} delay={1.4 + i * 0.07} duration={0.65} strokeWidth={0.9} />
 
             {/* Inner echo inside each petal */}
             <DrawPath
@@ -98,12 +73,7 @@ function CoverMedallion() {
         />
 
         {/* Inner scallop */}
-        <DrawPath
-          d={scallop(c, c, 58, 16, 6)}
-          delay={2.7}
-          duration={2}
-          strokeWidth={0.7}
-        />
+        <DrawPath d={scallop(c, c, 58, 16, 6)} delay={2.7} duration={2} strokeWidth={0.7} />
 
         {/* Inner dot ring */}
         {ringDots(c, c, 48, 12).map((d) => (
@@ -122,12 +92,7 @@ function CoverMedallion() {
         {/* Inner petal ring */}
         {radial(8, c, c, 34, 22.5).map((p, i) => (
           <g key={`inner-petal-${i}`} transform={p.transform}>
-            <DrawPath
-              d={petal(22, 10)}
-              delay={3.6 + i * 0.1}
-              duration={0.6}
-              strokeWidth={0.8}
-            />
+            <DrawPath d={petal(22, 10)} delay={3.6 + i * 0.1} duration={0.6} strokeWidth={0.8} />
           </g>
         ))}
 
@@ -143,12 +108,7 @@ function CoverMedallion() {
         />
 
         {/* Central flower */}
-        <Flower
-          transform={`translate(${c} ${c})`}
-          delay={4.3}
-          r={r2(18)}
-          petals={6}
-        />
+        <Flower transform={`translate(${c} ${c})`} delay={4.3} r={r2(18)} petals={6} />
       </g>
     </HennaStage>
   );
@@ -178,7 +138,7 @@ export function OpenGate({
     <AnimatePresence>
       {!open && (
         <motion.div
-          className="paper-grain fixed inset-0 z-50 flex flex-col items-center justify-center bg-background px-8"
+          className="paper-grain fixed inset-0 z-50 flex flex-col items-center justify-center overflow-y-auto bg-background px-8 py-8"
           exit={{
             opacity: 0,
             filter: "blur(6px)",
@@ -220,9 +180,9 @@ export function OpenGate({
               duration: 1.4,
             }}
           >
-            {groom}{" "}
-            <span className="text-accent">&</span>{" "}
-            {bride}
+            {groom && <span className="block max-w-full break-words">{groom}</span>}
+            {groom && bride && <span className="block text-accent">&</span>}
+            {bride && <span className="block max-w-full break-words">{bride}</span>}
           </motion.h2>
 
           {/* Open invitation */}

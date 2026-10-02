@@ -16,11 +16,9 @@ function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
+        <h1 className="display-name text-7xl text-foreground">404</h1>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Invitation not found</h2>
+        <p className="mt-2 text-sm text-muted-foreground">This invitation link is invalid.</p>
         <div className="mt-6">
           <Link
             to="/"
@@ -84,6 +82,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "msapplication-TileColor", content: "#ffffff" },
+      { name: "msapplication-TileImage", content: "/ms-icon-144x144.png" },
+      { name: "msapplication-config", content: "/browserconfig.xml" },
     ],
     links: [
       {
@@ -97,6 +98,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&family=Noto+Naskh+Arabic:wght@400;500&family=Noto+Serif+Devanagari:wght@400;500&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      ...[16, 32, 96].map((size) => ({
+        rel: "icon",
+        type: "image/png",
+        sizes: `${size}x${size}`,
+        href: `/favicon-${size}x${size}.png`,
+      })),
+      ...[57, 60, 72, 76, 114, 120, 144, 152, 180].map((size) => ({
+        rel: "apple-touch-icon",
+        sizes: `${size}x${size}`,
+        href: `/apple-icon-${size}x${size}.png`,
+      })),
+      { rel: "manifest", href: "/manifest.json" },
     ],
   }),
   shellComponent: RootShell,

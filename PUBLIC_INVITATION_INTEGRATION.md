@@ -297,3 +297,30 @@ Configure direct-refresh support for /:slug (SPA rewrite or framework dynamic ro
 - [ ] Any QR uses the exact RPC-provided `invitation.public_url`; no browser-generated fallback URL exists.
 - [ ] External links use `noopener noreferrer`.
 - [ ] Production build passes.
+
+## Design-specific presentation rules
+
+### Couple-name hero layout
+
+For this design’s invitation hero:
+
+- Render the groom’s name, the `&` symbol, and the bride’s name on three separate centered lines.
+- The `&` must be visually isolated between the two names; never place it on the same line as either name.
+- If only one name is provided, render only that name and hide the `&`.
+- Show the wedding date only once above or below reduce the redundency.
+
+## Floating Shop / Brand Showcase
+
+Every ZAR public invitation design must include a subtle floating shop/brand-name showcase.
+
+- The showcase must be **fixed to the bottom of the device viewport**, remaining visible while the invitation is scrolled.
+- It must be a **very thin horizontal ribbon/line**, never a large banner, card, or opaque strip.
+- The strip itself should occupy only approximately **1–2% of the viewport height** on mobile.
+- Use a **semi-transparent/translucent treatment** so the invitation artwork, lines, typography, or other design elements behind it remain visible through the strip.
+- The associated **Shop/Brand name must scroll horizontally in a continuous marquee-style motion**.
+- This is a **shared ZAR requirement across every invitation design**, while its typography, colors, ornamentation, and styling should follow each design's visual identity.
+- Keep it visually lightweight and elegant, functioning as a subtle branding/detail element rather than an advertisement.
+- Do not use a large background panel, opaque banner, excessive height, or intrusive animation.
+- The displayed Shop/Brand name must come from the invitation's **approved public shop/brand data** supplied by the central ZAR public invitation contract. Do not hardcode a shop name or query shop tables directly from the browser.
+- The showcase must not expose shop contact information during `live` invitation rendering.
+- Keep the showcase responsive and proportionally thin across mobile, tablet, and desktop.

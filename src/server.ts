@@ -1,3 +1,4 @@
+import { hasMalformedPathname, renderInvalidInvitationPage } from "./lib/invalid-invitation-page";
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
@@ -46,6 +47,12 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    if (hasMalformedPathname(new URL(request.url).pathname)) {
+      return new Response(renderInvalidInvitationPage(), {
+        status: 404,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

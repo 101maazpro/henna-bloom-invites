@@ -1,13 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 
-import { wedding, type WeddingData } from "@/data/wedding";
-import { createAmbience } from "@/lib/ambient-music";
+import { type WeddingData } from "@/data/wedding";
 import { Countdown } from "@/components/invitation/Countdown";
 import { OpenGate } from "@/components/invitation/OpenGate";
 import { MusicToggle } from "@/components/invitation/MusicToggle";
-import { Rsvp } from "@/components/invitation/Rsvp";
+import { BrandRibbon } from "@/components/invitation/BrandRibbon";
 import { LanguageSwitcher } from "@/components/invitation/LanguageSwitcher";
 import { LanguageProvider, useLanguage, type Language } from "@/lib/language";
 import {
@@ -28,14 +35,12 @@ export const Route = createFileRoute("/")({
       { title: "Henna Bloom Invites" },
       {
         name: "description",
-        content:
-          "A hand-drawn mehendi wedding invitation.",
+        content: "A hand-drawn mehendi wedding invitation.",
       },
       { property: "og:title", content: "Henna Bloom Invites" },
       {
         property: "og:description",
-        content:
-          "Open a private wedding invitation.",
+        content: "Open a private wedding invitation.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -51,8 +56,12 @@ const fadeUp = {
   visible: { opacity: 1, y: 0 },
 };
 
-const WeddingContext = createContext<WeddingData>(wedding);
-const useWedding = () => useContext(WeddingContext);
+const WeddingContext = createContext<WeddingData | null>(null);
+const useWedding = () => {
+  const data = useContext(WeddingContext);
+  if (!data) throw new Error("Invitation content is required.");
+  return data;
+};
 
 function RootLanding() {
   return (
@@ -60,7 +69,9 @@ function RootLanding() {
       <div>
         <p className="eyebrow">Henna Bloom Invites</p>
         <h1 className="display-name mt-4 text-4xl">Your invitation awaits</h1>
-        <p className="mt-3 text-sm text-muted-foreground">Open the invitation using its private link.</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Open the invitation using its private link.
+        </p>
       </div>
     </main>
   );
@@ -115,37 +126,38 @@ function Eyebrow({ children }: { children: ReactNode }) {
 
 /* ------------------------------------------------------------------ */
 
-export function Invitation({ data = wedding }: { data?: WeddingData }) {
+export function Invitation({ data }: { data: WeddingData }) {
   const d = data;
   const reduced = useReducedMotion() ?? false;
   const [language, setLanguage] = useState<Language>("en");
   const [opened, setOpened] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const ambience = useMemo(() => createAmbience(), []);
-  const audio = useMemo(() => (d.music.url ? new Audio(d.music.url) : null), [d.music.url]);
-
-  useEffect(() => () => {
-    ambience.dispose();
-    if (audio) {
-      audio.pause();
-      audio.src = "";
-    }
-  }, [ambience, audio]);
-
+  const audio = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (!d.music.enabled || !d.music.url) return;
+    const player = new Audio(d.music.url);
+    player.loop = true;
+    player.preload = "none";
+    player.onpause = () => setPlaying(false);
+    player.onerror = () => setPlaying(false);
+    audio.current = player;
+    return () => {
+      player.pause();
+      player.src = "";
+      audio.current = null;
+    };
+  }, [d.music.enabled, d.music.url]);
   const startMusic = async () => {
-    if (audio) return audio.play();
-    return ambience.start();
+    if (!audio.current) return;
+    await audio.current.play();
+    setPlaying(true);
   };
-
-  const stopMusic = () => {
-    if (audio) audio.pause();
-    else ambience.stop();
-  };
+  const stopMusic = () => audio.current?.pause();
 
   const onOpen = () => {
     setOpened(true);
     if (d.music.enabled) {
-      void startMusic().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      void startMusic().catch(() => setPlaying(false));
     }
   };
 
@@ -154,32 +166,32 @@ export function Invitation({ data = wedding }: { data?: WeddingData }) {
       stopMusic();
       setPlaying(false);
     } else {
-      void startMusic().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      void startMusic().catch(() => setPlaying(false));
     }
   };
 
   return (
     <LanguageProvider language={language} setLanguage={setLanguage}>
-    <WeddingContext.Provider value={d}>
-      <LanguageSwitcher />
-    <main className="paper-grain paper-vignette relative min-h-screen overflow-x-hidden bg-background">
-      <OpenGate groom={d.couple.groom} bride={d.couple.bride} onOpen={onOpen} />
-      {d.music.enabled && opened && (
-        <MusicToggle playing={playing} onToggle={toggleMusic} label={d.music.label} />
-      )}
+      <WeddingContext.Provider value={d}>
+        <LanguageSwitcher />
+        <main className="paper-grain paper-vignette relative min-h-screen overflow-x-hidden bg-background">
+          <OpenGate groom={d.couple.groom} bride={d.couple.bride} onOpen={onOpen} />
+          {d.music.enabled && opened && (
+            <MusicToggle playing={playing} onToggle={toggleMusic} label={d.music.label} />
+          )}
 
-      <Hero />
-      {(d.message.kicker || d.message.body || d.message.closing) && <MessageSection />}
-      {d.profiles && <CoupleSection />}
-      <CountdownSection />
-      {d.events.length > 0 && <EventsSection />}
-      <VenueSection />
-      {d.gallery.length > 0 && <GallerySection reduced={reduced} />}
-      <RsvpSection />
-      {d.contacts.length > 0 && <ContactSection />}
-      <Finale />
-    </main>
-    </WeddingContext.Provider>
+          <Hero />
+          {(d.message.kicker || d.message.body || d.message.closing) && <MessageSection />}
+          {d.profiles && <CoupleSection />}
+          <CountdownSection />
+          {d.events.length > 0 && <EventsSection />}
+          <VenueSection />
+          {d.gallery.length > 0 && <GallerySection reduced={reduced} />}
+          {d.contacts.length > 0 && <ContactSection />}
+          <Finale />
+          <BrandRibbon name={d.brandName} />
+        </main>
+      </WeddingContext.Provider>
     </LanguageProvider>
   );
 }
@@ -206,7 +218,7 @@ function Hero() {
           delay={0.4}
         />
 
-        <div className="relative px-6 py-14 text-center">
+        <div className="relative px-6 py-28 text-center">
           {inv.kind !== "none" && inv.text && (
             <motion.div
               initial={{ opacity: 0, filter: "blur(8px)" }}
@@ -215,7 +227,9 @@ function Hero() {
               dir={inv.dir}
               className="mb-9"
             >
-              <p className={`${fontClass} text-[1.05rem] leading-loose text-primary sm:text-xl`}>
+              <p
+                className={`${fontClass} whitespace-pre-line text-[1.05rem] leading-loose text-primary sm:text-xl`}
+              >
                 {inv.text}
               </p>
               {inv.translation && (
@@ -244,11 +258,21 @@ function Hero() {
             animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
             transition={{ delay: 4.5, duration: 1.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="display-name text-[3.1rem] sm:text-6xl">{d.couple.groom}</span>
-            <span className="my-1.5 font-display text-2xl text-accent italic">
-              {d.couple.joiner}
-            </span>
-            <span className="display-name text-[3.1rem] sm:text-6xl">{d.couple.bride}</span>
+            {d.couple.groom && (
+              <span className="display-name max-w-full break-words text-[clamp(2rem,9vw,3.75rem)]">
+                {d.couple.groom}
+              </span>
+            )}
+            {d.couple.joiner && (
+              <span className="my-1.5 font-display text-2xl text-accent italic">
+                {d.couple.joiner}
+              </span>
+            )}
+            {d.couple.bride && (
+              <span className="display-name max-w-full break-words text-[clamp(2rem,9vw,3.75rem)]">
+                {d.couple.bride}
+              </span>
+            )}
           </motion.h1>
 
           <motion.div
@@ -261,6 +285,9 @@ function Hero() {
             <p className="mt-4 font-sans text-[0.68rem] tracking-[0.38em] text-foreground uppercase">
               {d.headlineDate}
             </p>
+            {d.weddingTime && (
+              <p className="mt-2 font-display text-sm text-primary">{d.weddingTime}</p>
+            )}
             <p className="mt-2 font-display text-sm text-muted-foreground italic">
               {d.venue.city.split(",")[0]}
             </p>
@@ -271,7 +298,7 @@ function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 6.6, duration: 1.4 }}
-          className="absolute -bottom-20 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
+          className="absolute -bottom-28 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2"
         >
           <span className="eyebrow text-[0.55rem]">{t.scroll}</span>
           <motion.span
@@ -300,8 +327,7 @@ function MessageSection() {
         <Eyebrow>{d.message.kicker}</Eyebrow>
         <Reveal delay={0.15}>
           <p className="display-name mt-6 text-3xl sm:text-4xl">
-            {d.couple.groom} <span className="text-accent">{d.couple.joiner}</span>{" "}
-            {d.couple.bride}
+            {d.couple.groom} <span className="text-accent">{d.couple.joiner}</span> {d.couple.bride}
           </p>
         </Reveal>
         <Reveal delay={0.3}>
@@ -310,11 +336,13 @@ function MessageSection() {
           </p>
         </Reveal>
         <HennaDivider className="mx-auto mt-10 h-14 w-full max-w-[280px] ink-line" />
-        <Reveal delay={0.2}>
-          <p className="mx-auto mt-8 max-w-[19rem] font-display text-[0.95rem] leading-relaxed text-foreground/80 italic">
-            {d.message.closing}
-          </p>
-        </Reveal>
+        {d.message.closing && (
+          <Reveal delay={0.2}>
+            <p className="mx-auto mt-8 max-w-[19rem] font-display text-[0.95rem] leading-relaxed text-foreground/80 italic">
+              {d.message.closing}
+            </p>
+          </Reveal>
+        )}
       </div>
     </Section>
   );
@@ -327,23 +355,47 @@ function CoupleSection() {
   const people = [
     { name: d.couple.groom, profile: profiles.groom },
     { name: d.couple.bride, profile: profiles.bride },
-  ];
+  ].filter(({ profile }) => Object.values(profile).some(Boolean));
+  if (!people.length && !profiles.relatives) return null;
 
   return (
     <Section className="relative py-20">
-      <div className="text-center"><Eyebrow>With their families</Eyebrow></div>
+      <div className="text-center">
+        <Eyebrow>With their families</Eyebrow>
+      </div>
       <div className="mt-10 grid gap-10 sm:grid-cols-2">
-        {people.map(({ name, profile }) => (
-          <Reveal key={name} className="text-center">
-            {profile.photoUrl && <img src={profile.photoUrl} alt={name} loading="lazy" className="mx-auto aspect-[4/5] w-44 border border-border object-cover" />}
+        {people.map(({ name, profile }, index) => (
+          <Reveal key={`${name}-${index}`} className="text-center">
+            {profile.photoUrl && (
+              <img
+                src={profile.photoUrl}
+                alt={name}
+                loading="lazy"
+                className="mx-auto aspect-[4/5] w-44 border border-border object-cover"
+              />
+            )}
             <h2 className="display-name mt-5 text-3xl">{name}</h2>
-            {profile.qualification && <p className="mt-2 font-display text-sm text-muted-foreground">{profile.qualification}</p>}
-            {profile.occupation && <p className="font-display text-sm text-muted-foreground">{profile.occupation}</p>}
-            {profile.parents && <p className="mt-3 font-display text-sm text-foreground/80">{profile.parents}</p>}
+            {profile.qualification && (
+              <p className="mt-2 font-display text-sm text-muted-foreground">
+                {profile.qualification}
+              </p>
+            )}
+            {profile.occupation && (
+              <p className="font-display text-sm text-muted-foreground">{profile.occupation}</p>
+            )}
+            {profile.parents && (
+              <p className="mt-3 font-display text-sm text-foreground/80">{profile.parents}</p>
+            )}
           </Reveal>
         ))}
       </div>
-      {profiles.relatives && <Reveal><p className="mx-auto mt-10 max-w-sm text-center font-display text-sm text-muted-foreground">{profiles.relatives}</p></Reveal>}
+      {profiles.relatives && (
+        <Reveal>
+          <p className="mx-auto mt-10 max-w-sm text-center font-display text-sm text-muted-foreground">
+            {profiles.relatives}
+          </p>
+        </Reveal>
+      )}
     </Section>
   );
 }
@@ -353,9 +405,20 @@ function CoupleSection() {
 function CountdownSection() {
   const d = useWedding();
   const { t } = useLanguage();
+  const [now, setNow] = useState(Date.now);
+  const target = Date.parse(d.weddingISO);
+  useEffect(() => {
+    if (!Number.isFinite(target) || target <= Date.now()) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [target]);
+  if (!Number.isFinite(target) || target <= now) return null;
   return (
     <Section className="relative py-20">
-      <HennaStage className="pointer-events-none absolute inset-x-0 -top-2 h-16 w-full ink-line" viewBox="0 0 320 60">
+      <HennaStage
+        className="pointer-events-none absolute inset-x-0 -top-2 h-16 w-full ink-line"
+        viewBox="0 0 320 60"
+      >
         <g stroke="currentColor" fill="none">
           <Vine transform="translate(160 30)" length={150} amplitude={10} waves={3} delay={0} />
           <Vine
@@ -397,7 +460,7 @@ function EventsSection() {
 
       <ul className="mt-14 space-y-16">
         {d.events.map((ev, i) => (
-          <li key={ev.id} className="relative">
+          <li key={`${ev.id}-${i}`} className="relative">
             <FloralSpray
               className={`pointer-events-none absolute ${
                 i % 2 === 0 ? "-left-8" : "-right-8"
@@ -441,6 +504,7 @@ function EventsSection() {
 function VenueSection() {
   const d = useWedding();
   const { t } = useLanguage();
+  if (!Object.values(d.venue).some(Boolean)) return null;
   return (
     <Section className="relative py-24">
       <div className="relative mx-auto flex min-h-[420px] max-w-[330px] items-center justify-center">
@@ -456,17 +520,26 @@ function VenueSection() {
               {d.venue.city}
             </p>
           </Reveal>
-          {d.venue.mapsUrl && <Reveal delay={0.35}>
-            <a
-              href={d.venue.mapsUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="mt-7 inline-block border border-accent px-6 py-3 font-sans text-[0.6rem] tracking-[0.36em] text-primary uppercase transition-colors hover:bg-secondary"
-            >
-              {t.directions}
-            </a>
-          </Reveal>}
-          {d.venue.imageUrl && <img src={d.venue.imageUrl} alt={d.venue.name || "Venue"} loading="lazy" className="mx-auto mt-8 max-h-44 w-full object-cover" />}
+          {d.venue.mapsUrl && (
+            <Reveal delay={0.35}>
+              <a
+                href={d.venue.mapsUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="mt-7 inline-block border border-accent px-6 py-3 font-sans text-[0.6rem] tracking-[0.36em] text-primary uppercase transition-colors hover:bg-secondary"
+              >
+                {t.directions}
+              </a>
+            </Reveal>
+          )}
+          {d.venue.imageUrl && (
+            <img
+              src={d.venue.imageUrl}
+              alt={d.venue.name || "Venue"}
+              loading="lazy"
+              className="mx-auto mt-8 max-h-44 w-full object-cover"
+            />
+          )}
         </div>
       </div>
     </Section>
@@ -512,10 +585,7 @@ function GalleryImage({
         } z-10 h-20 w-20 rotate-180 ink-line`}
         flip={odd}
       />
-      <motion.div
-        style={{ y }}
-        className="relative overflow-hidden border border-border"
-      >
+      <motion.div style={{ y }} className="relative overflow-hidden border border-border">
         <motion.img
           src={image.src}
           alt={image.alt}
@@ -544,7 +614,7 @@ function GallerySection({ reduced }: { reduced: boolean }) {
       </div>
       <div className="mt-16 space-y-20">
         {d.gallery.map((img, i) => (
-          <GalleryImage key={img.src} image={img} index={i} reduced={reduced} />
+          <GalleryImage key={`${img.src}-${i}`} image={img} index={i} reduced={reduced} />
         ))}
       </div>
       <HennaDivider className="mx-auto mt-20 h-14 w-full max-w-[280px] ink-line" />
@@ -554,47 +624,45 @@ function GallerySection({ reduced }: { reduced: boolean }) {
 
 /* ---------------------------- 7. RSVP ----------------------------- */
 
-function RsvpSection() {
-  const d = useWedding();
-  const { t } = useLanguage();
-  return (
-    <Section className="relative py-20">
-      <div className="relative">
-        <OrnamentFrame className="pointer-events-none absolute -inset-x-4 -inset-y-8 h-[calc(100%+4rem)] w-[calc(100%+2rem)] ink-line" />
-        <div className="relative px-4 py-10">
-          <div className="text-center">
-            <Eyebrow>{t.respond}</Eyebrow>
-            <Reveal delay={0.1}>
-              <h2 className="display-name mt-4 text-4xl">{t.rsvp}</h2>
-            </Reveal>
-          </div>
-          <div className="mt-10">
-            <Rsvp deadline={d.rsvpDeadline} />
-          </div>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
 function ContactSection() {
   const d = useWedding();
   return (
     <Section className="relative py-16">
       <div className="text-center">
         <Eyebrow>For any queries</Eyebrow>
-        <Reveal delay={0.1}><h2 className="display-name mt-4 text-4xl">Contact</h2></Reveal>
+        <Reveal delay={0.1}>
+          <h2 className="display-name mt-4 text-4xl">Contact</h2>
+        </Reveal>
       </div>
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         {d.contacts.map((contact, index) => {
           const phoneDigits = contact.phone.replace(/\D/g, "");
-          const whatsappUrl = contact.whatsappUrl || (phoneDigits ? `https://wa.me/${phoneDigits}` : "");
+          const whatsappUrl =
+            contact.whatsappUrl || (phoneDigits ? `https://wa.me/${phoneDigits}` : "");
           return (
-            <Reveal key={`${contact.phone}-${index}`} className="border border-border px-5 py-6 text-center" delay={0.1 * index}>
+            <Reveal
+              key={`${contact.phone}-${index}`}
+              className="border border-border px-5 py-6 text-center"
+              delay={0.1 * index}
+            >
               {contact.name && <p className="display-name text-2xl">{contact.name}</p>}
               <div className="mt-5 flex flex-wrap justify-center gap-3">
-                <a href={`tel:${contact.phone}`} className="border border-accent px-5 py-3 font-sans text-[0.6rem] tracking-[0.28em] text-primary uppercase transition-colors hover:bg-secondary">Call</a>
-                {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noreferrer noopener" className="border border-accent px-5 py-3 font-sans text-[0.6rem] tracking-[0.28em] text-primary uppercase transition-colors hover:bg-secondary">WhatsApp</a>}
+                <a
+                  href={`tel:${contact.phone}`}
+                  className="border border-accent px-5 py-3 font-sans text-[0.6rem] tracking-[0.28em] text-primary uppercase transition-colors hover:bg-secondary"
+                >
+                  Call
+                </a>
+                {whatsappUrl && (
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="border border-accent px-5 py-3 font-sans text-[0.6rem] tracking-[0.28em] text-primary uppercase transition-colors hover:bg-secondary"
+                  >
+                    WhatsApp
+                  </a>
+                )}
               </div>
             </Reveal>
           );
@@ -613,27 +681,31 @@ function Finale() {
     <section className="relative overflow-hidden px-6 pt-28 pb-20">
       <div className="relative mx-auto flex aspect-square w-full max-w-[520px] items-center justify-center">
         <GrandMandala className="pointer-events-none absolute inset-0 h-full w-full ink-line" />
-        <div className="relative max-w-[58%] text-center">
-          <p className="display-name text-[1.7rem] leading-tight sm:text-3xl">
-            {d.couple.groom}
-            <span className="mx-1.5 text-accent">{d.couple.joiner}</span>
-            {d.couple.bride}
-          </p>
-          <div className="rule-gold mx-auto mt-4 w-16" />
-          <p className="mt-4 font-sans text-[0.55rem] leading-[1.9] tracking-[0.3em] text-muted-foreground uppercase sm:text-[0.62rem]">
-            {d.finale.title}
+        <div className="relative w-[30%] text-center">
+          <p
+            className={`display-name break-words leading-tight ${d.couple.groom.length + d.couple.bride.length > 36 ? "text-[clamp(0.65rem,2.8vw,1rem)]" : "text-[clamp(1rem,5vw,1.7rem)]"}`}
+          >
+            {d.couple.groom && <span className="block">{d.couple.groom}</span>}
+            {d.couple.joiner && <span className="block text-accent">{d.couple.joiner}</span>}
+            {d.couple.bride && <span className="block">{d.couple.bride}</span>}
           </p>
         </div>
       </div>
 
       <div className="mx-auto mt-10 max-w-[430px] text-center">
         <Reveal>
+          <div className="rule-gold mx-auto mb-4 w-16" />
+          <p className="mb-5 font-sans text-[0.65rem] leading-[1.9] tracking-[0.3em] text-muted-foreground uppercase">
+            {d.finale.title}
+          </p>
+        </Reveal>
+        <Reveal>
           <p className="font-display text-base text-muted-foreground italic">{d.finale.note}</p>
         </Reveal>
 
         <Reveal delay={0.3}>
           <p className="eyebrow mt-12 text-[0.5rem]">
-            {d.couple.groom} {d.couple.joiner} {d.couple.bride} · {d.headlineDate}
+            {d.couple.groom} {d.couple.joiner} {d.couple.bride}
           </p>
         </Reveal>
       </div>

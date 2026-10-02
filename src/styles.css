@@ -127,11 +127,7 @@
     pointer-events: none;
     z-index: 30;
     background:
-      radial-gradient(
-        120% 80% at 50% 12%,
-        oklch(1 0 0 / 0.5) 0%,
-        oklch(1 0 0 / 0) 45%
-      ),
+      radial-gradient(120% 80% at 50% 12%, oklch(1 0 0 / 0.5) 0%, oklch(1 0 0 / 0) 45%),
       radial-gradient(
         95% 70% at 50% 50%,
         oklch(0.412 0.093 44 / 0) 55%,
@@ -174,4 +170,45 @@
     transparent
   );
   height: 1px;
+}
+
+.brand-ribbon {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 60;
+  height: clamp(10px, 1.7dvh, 16px);
+  overflow: hidden;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--background) 35%, transparent);
+  color: var(--primary);
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-size: 9px;
+  line-height: clamp(10px, 1.7dvh, 16px);
+  letter-spacing: 0.15em;
+}
+.brand-marquee {
+  display: flex;
+  width: max-content;
+  animation: brand-scroll 35s linear infinite;
+}
+.brand-marquee-copy {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-around;
+  min-width: 100vw;
+}
+.brand-marquee-copy > span {
+  padding: 0 3rem;
+  white-space: nowrap;
+}
+@keyframes brand-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-marquee {
+    animation: none;
+  }
 }
