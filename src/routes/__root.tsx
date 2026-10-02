@@ -82,7 +82,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "A hand-drawn mehendi wedding invitation.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:title", content: "Henna Bloom Invites" },
+      {
+        property: "og:description",
+        content: "A hand-drawn mehendi wedding invitation.",
+      },
+      {
+        property: "og:image",
+        content: "https://henna-bloom-invites.vercel.app/og-image.png",
+      },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:image",
+        content: "https://henna-bloom-invites.vercel.app/og-image.png",
+      },
       { name: "msapplication-TileColor", content: "#ffffff" },
       { name: "msapplication-TileImage", content: "/ms-icon-144x144.png" },
       { name: "msapplication-config", content: "/browserconfig.xml" },
@@ -138,7 +153,6 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
   );
