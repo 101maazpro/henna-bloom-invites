@@ -76,19 +76,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Henna Bloom Invites" },
+      { title: "ZAR Wedding Invitations" },
       {
         name: "description",
         content: "A hand-drawn mehendi wedding invitation.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:title", content: "Henna Bloom Invites" },
+      { property: "og:title", content: "ZAR Wedding Invitations" },
       {
         property: "og:description",
         content: "A hand-drawn mehendi wedding invitation.",
       },
       {
         property: "og:image",
+        content: "https://henna-bloom-invites.vercel.app/og-image.png",
+      },
+      {
+        property: "og:image:secure_url",
         content: "https://henna-bloom-invites.vercel.app/og-image.png",
       },
       { property: "og:image:width", content: "1200" },
